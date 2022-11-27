@@ -78,7 +78,6 @@ class Binance_Pay_Woocommerce {
 		$this->set_locale();
 		$this->define_admin_hooks();
 		$this->define_public_hooks();
-		$this->create_gateway();
 
 	}
 
@@ -173,19 +172,6 @@ class Binance_Pay_Woocommerce {
 
 		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_styles' );
 		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_scripts' );
-
-	}
-
-	/**
-	 * create new gateway
-	 * of the plugin.
-	 *
-	 * @since    1.0.0
-	 * @access   private
-	 */
-	private function create_gateway() {
-
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-binance-pay-woocommerce-create-gateway.php';
 
 	}
 

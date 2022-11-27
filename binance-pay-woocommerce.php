@@ -64,6 +64,28 @@ register_deactivation_hook( __FILE__, 'deactivate_binance_pay_woocommerce' );
  */
 require plugin_dir_path( __FILE__ ) . 'includes/class-binance-pay-woocommerce.php';
 
+
+/**
+ * Register new gateway class
+ */
+add_filter( 'woocommerce_payment_gateways', 'register_gateway_class' );
+ 
+function register_gateway_class( $gateways ) {
+	$gateways[] = 'WC_Gateway_BinancePay'; 
+	return $gateways;
+}
+ 
+/*
+ * Add new gateway class
+ */
+add_action( 'plugins_loaded', 'gateway_class' );
+function gateway_class() {
+	require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-binance-pay-woocommerce-create-gateway.php';
+
+}
+
+
+
 /**
  * Begins execution of the plugin.
  *
