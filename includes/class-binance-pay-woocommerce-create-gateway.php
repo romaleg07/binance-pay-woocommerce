@@ -118,6 +118,64 @@ class WC_Gateway_BinancePay extends WC_Payment_Gateway {
     }
 
     /**
+     * Generate payment form
+     **/
+    public function generate_data_for_binance($order_id){
+ 
+        global $woocommerce;
+ 
+        $order = new WC_Order($order_id);
+ 
+        $redirect_url = ($this -> redirect_page_id=="" || $this -> redirect_page_id==0)?get_site_url() . "/":get_permalink($this -> redirect_page_id);
+ 
+        $productinfo = "Order $order_id";
+
+
+
+	    $currencies_rate = $this->get_current_rates();
+
+
+        $currency = $order->get_currency();
+        $total = $order->get_total();
+
+        $goodsArray = array();
+
+
+
+
+        $arr = array('a' => 1, 'b' => 2, 'c' => 3, 'd' => 4, 'e' => 5);
+
+        $nonce = $this->generateRandomString();
+        $timestamp = time();
+        $body = json_encode($arr);
+
+        $secretKey = $this->secret_key;
+
+
+        
+        
+        $payload = $timestamp . "\n" . $nonce . "\n" . $body . "\n";
+
+        $signature = hash_hmac('sha512', $payload, $secretKey);
+
+
+		return '';
+ 
+ 
+    }
+
+    public function generateRandomString() {
+        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $charactersLength = strlen($characters);
+        $randomString = '';
+        for ($i = 0; $i < 32; $i++) {
+            $randomString .= $characters[rand(0, $charactersLength - 1)];
+        }
+        return $randomString;
+    }
+
+
+    /**
      * get rates
      **/
     public function get_current_rates() {
@@ -167,34 +225,6 @@ class WC_Gateway_BinancePay extends WC_Payment_Gateway {
 
         return [$eur, $usdt];
     }
-    
-
-    /**
-     * Generate payment form
-     **/
-    public function generate_payment_form($order_id){
- 
-        global $woocommerce;
- 
-        $order = new WC_Order($order_id);
- 
-        $redirect_url = ($this -> redirect_page_id=="" || $this -> redirect_page_id==0)?get_site_url() . "/":get_permalink($this -> redirect_page_id);
- 
-        $productinfo = "Order $order_id";
-
-
-
-	    $currencies_rate = get_current_rates();
-
-
-
-
-
-		return '';
- 
- 
-    }
-
 
 
     /**
