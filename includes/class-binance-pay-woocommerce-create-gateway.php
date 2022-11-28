@@ -57,7 +57,10 @@ class WC_Gateway_BinancePay extends WC_Payment_Gateway {
 
         // Actions
         add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
-        add_action( 'woocommerce_thankyou_' . $this->id, array( $this, 'thankyou_page' ) );
+        // add_action( 'woocommerce_thankyou_' . $this->id, array( $this, 'thankyou_page' ) );
+
+        add_action('woocommerce_receipt_'.$this->id, array($this, 'receipt_page'));
+
 
         // Customer Emails
         add_action( 'woocommerce_email_before_order_table', array( $this, 'email_instructions' ), 10, 3 );
@@ -159,7 +162,14 @@ class WC_Gateway_BinancePay extends WC_Payment_Gateway {
         $signature = hash_hmac('sha512', $payload, $secretKey);
 
 
-		return '';
+        $html = $productinfo . '<br>';
+        $html .= $total . '<br>';
+        $html .= $nonce . '<br>';
+        $html .= $timestamp . '<br>';
+        $html .= $secretKey . '<br>';
+        $html .= $signature . '<br>';
+
+		return $html;
  
  
     }
@@ -173,6 +183,7 @@ class WC_Gateway_BinancePay extends WC_Payment_Gateway {
         }
         return $randomString;
     }
+    
 
 
     /**
@@ -232,7 +243,7 @@ class WC_Gateway_BinancePay extends WC_Payment_Gateway {
      **/
     function receipt_page($order){
         echo '<p>'.__('Thank you for your order, please click the button below to pay with Binance Pay.', 'woocommerce').'</p>';
-        echo $this->generate_payment_form($order);
+        echo $this->generate_data_for_binance($order);
     }
 
 
