@@ -32,7 +32,7 @@ class WC_Gateway_BinancePay extends WC_Payment_Gateway {
         /**
          * Add callback handler for callback-links
          */
-        add_action( 'woocommerce_api_'. strtolower( get_class($this) ), array( $this, 'callback_handler' ) );
+        // add_action( 'woocommerce_api_'. strtolower( get_class($this) ), array( $this, 'callback_handler' ) );
     
         $this->domain             = 'binance_pay';
         $this->id                 = 'binance_pay';
@@ -247,11 +247,30 @@ class WC_Gateway_BinancePay extends WC_Payment_Gateway {
     }
 
 
-    /**
-     * Create callback handler
-     */
-    public function callback_handler() {
+    // /**
+    //  * Create callback handler
+    //  */
+    // public function callback_handler() {
 
+    // }
+
+    /**
+	 * Process the payment and return the result.
+	 * @param  int $order_id
+	 * @return array
+	 */
+    function process_payment($order_id){
+        
+        $order = new WC_Order($order_id);
+        
+        return array('result' => 'success', 'redirect' => add_query_arg(array(
+                    'key' => $order->order_key,
+                    'order' => $order->id
+                ),
+                wc_get_checkout_url()
+            )
+        );
+        
     }
 
 }
