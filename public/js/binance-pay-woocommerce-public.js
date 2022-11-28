@@ -1,5 +1,15 @@
 (function( $ ) {
 	'use strict';
+		const wrapper = $('#payment');
+		jQuery(document.body).on("updated_checkout payment_method_selected", function (e) {
+			let chosen_method = $('input[name="payment_method"]:checked').val()
+
+
+			console.log(chosen_method);
+	
+		});
+
+
 
 	/**
 	 * All of the code for your public-facing JavaScript source

@@ -80,7 +80,7 @@ function register_gateway_class( $gateways ) {
  */
 add_action( 'plugins_loaded', 'gateway_class' );
 function gateway_class() {
-	require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-binance-pay-woocommerce-create-gateway.php';
+	require_once plugin_dir_path( __FILE__ ) . 'includes/class-binance-pay-woocommerce-create-gateway.php';
 
 }
 

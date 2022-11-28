@@ -117,6 +117,94 @@ class WC_Gateway_BinancePay extends WC_Payment_Gateway {
         );
     }
 
+    /**
+     * get rates
+     **/
+    public function get_current_rates() {
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => 'api.coincap.io/v2/rates/euro/',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'GET',
+        ));
+
+        $response = curl_exec($curl);
+
+        curl_close($curl);
+        $response = json_decode($response, true);
+
+        $rateUSD = $response['data']['rateUsd'];
+
+        $eur = $rateUSD;
+
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => 'api.coincap.io/v2/rates/tether/',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'GET',
+        ));
+
+        $response = curl_exec($curl);
+
+        curl_close($curl);
+        $response = json_decode($response, true);
+
+        $rateUSDT = $response['data']['rateUsd'];
+
+        $usdt = $rateUSDT;
+
+        return [$eur, $usdt];
+    }
+    
+
+    /**
+     * Generate payment form
+     **/
+    public function generate_payment_form($order_id){
+ 
+        global $woocommerce;
+ 
+        $order = new WC_Order($order_id);
+ 
+        $redirect_url = ($this -> redirect_page_id=="" || $this -> redirect_page_id==0)?get_site_url() . "/":get_permalink($this -> redirect_page_id);
+ 
+        $productinfo = "Order $order_id";
+
+
+
+	    $currencies_rate = get_current_rates();
+
+
+
+
+
+		return '';
+ 
+ 
+    }
+
+
+
+    /**
+     * Receipt Page
+     **/
+    function receipt_page($order){
+        echo '<p>'.__('Thank you for your order, please click the button below to pay with Binance Pay.', 'woocommerce').'</p>';
+        echo $this->generate_payment_form($order);
+    }
+
 
     /**
      * Create callback handler
@@ -124,5 +212,6 @@ class WC_Gateway_BinancePay extends WC_Payment_Gateway {
     public function callback_handler() {
 
     }
+
 }
 
