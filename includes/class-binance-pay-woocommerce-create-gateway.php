@@ -140,36 +140,93 @@ class WC_Gateway_BinancePay extends WC_Payment_Gateway {
 
         $currency = $order->get_currency();
         $total = $order->get_total();
+        $totalUSDT = 0;
 
-        $goodsArray = array();
+        if($currency == "EUR") {
+            $totalUSD = (float)$total * (float)$currencies_rate['usd'];
+            $totalUSDT = round((float)$totalUSD / (float)$currencies_rate['usdt'], 2);
+        } else {
+            $totalUSDT = round((float)$total / (float)$currencies_rate['usdt'], 2);
+        }
 
 
 
 
-        $arr = array('a' => 1, 'b' => 2, 'c' => 3, 'd' => 4, 'e' => 5);
+        $arr = array('env' => array('terminalType' => 'WEB'), 'merchantTradeNo' => $order_id, 'orderAmount' => $totalUSDT, 'currency' => 'USDT');
+
+        $arr['goods'] = array();
+
+        $index = 0;
+        $arr['goods']['goodsType'] = "02";
+        $arr['goods']['goodsCategory'] = "6000";
+        $referenceGoodsId = '';
+        $goodsName = '';
+        foreach ( $order->get_items() as $item_id => $item ) {
+            $product_id = (string)$item->get_product_id();
+            if($index == 0) {
+                $referenceGoodsId = $product_id;
+                $goodsName = $item->get_name();
+            } else {
+                $referenceGoodsId .= ', ' . $product_id;
+                $goodsName .= ', ' . $item->get_name();
+            }
+            $index++;
+        }
+        $arr['goods']['referenceGoodsId'] =  $referenceGoodsId;
+        $arr['goods']['goodsName'] =  $goodsName;
+        $arr['webhookUrl'] = 'https://baxity.com/store/wc-api/wc_gateway_binancepay/';
+        $arr['returnUrl'] = 'https://baxity.com/store/my-account/orders/';
+
+        $json_arr = json_encode($arr);
+
 
         $nonce = $this->generateRandomString();
-        $timestamp = time();
         $body = json_encode($arr);
 
         $secretKey = $this->secret_key;
+        $apiKey = $this->api_key;
 
 
-        
+        $currencies_rate_json = json_encode($currencies_rate);
+
+        $timestamp = round(microtime(true) * 1000);
         
         $payload = $timestamp . "\n" . $nonce . "\n" . $body . "\n";
 
-        $signature = hash_hmac('sha512', $payload, $secretKey);
+        $signature = strtoupper(hash_hmac('sha512', $payload, $secretKey));
+
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => 'https://bpay.binanceapi.com/binancepay/openapi/v2/order',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => $json_arr,
+            CURLOPT_HTTPHEADER => array(
+            'Content-Type: application/json',
+            "BinancePay-Timestamp: $timestamp",
+            "BinancePay-Nonce: $nonce",
+            "BinancePay-Certificate-SN: $apiKey",
+            "BinancePay-Signature: $signature",
+            ),
+        ));
+
+        $response = curl_exec($curl);
+        curl_close($curl);
+        $response = json_decode($response, true);
+        
 
 
-        $html = $productinfo . '<br>';
-        $html .= $total . '<br>';
-        $html .= $nonce . '<br>';
-        $html .= $timestamp . '<br>';
-        $html .= $secretKey . '<br>';
-        $html .= $signature . '<br>';
 
-		return $html;
+		return $response;
+
+
+
  
  
     }
@@ -210,11 +267,11 @@ class WC_Gateway_BinancePay extends WC_Payment_Gateway {
 
         $rateUSD = $response['data']['rateUsd'];
 
-        $eur = $rateUSD;
+        $usd = $rateUSD;
 
-        $curl = curl_init();
+        $curl2 = curl_init();
 
-        curl_setopt_array($curl, array(
+        curl_setopt_array($curl2, array(
             CURLOPT_URL => 'api.coincap.io/v2/rates/tether/',
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
@@ -225,16 +282,16 @@ class WC_Gateway_BinancePay extends WC_Payment_Gateway {
             CURLOPT_CUSTOMREQUEST => 'GET',
         ));
 
-        $response = curl_exec($curl);
+        $response2 = curl_exec($curl2);
 
-        curl_close($curl);
-        $response = json_decode($response, true);
+        curl_close($curl2);
+        $response2 = json_decode($response2, true);
 
-        $rateUSDT = $response['data']['rateUsd'];
+        $rateUSDT = $response2['data']['rateUsd'];
 
         $usdt = $rateUSDT;
 
-        return [$eur, $usdt];
+        return array("usd"=> $usd, "usdt" => $usdt);
     }
 
 
@@ -243,7 +300,7 @@ class WC_Gateway_BinancePay extends WC_Payment_Gateway {
      **/
     function receipt_page($order){
         echo '<p>'.__('Thank you for your order, please click the button below to pay with Binance Pay.', 'woocommerce').'</p>';
-        echo $this->generate_data_for_binance($order);
+        print_r($this->generate_data_for_binance($order));
     }
 
 
