@@ -30,10 +30,6 @@ class WC_Gateway_BinancePay extends WC_Payment_Gateway {
      * Constructor for the gateway.
      */
     public function __construct() {
-        /**
-         * Add callback handler for callback-links
-         */
-        // add_action( 'woocommerce_api_'. strtolower( get_class($this) ), array( $this, 'callback_handler' ) );
     
         $this->domain             = 'binance_pay';
         $this->id                 = 'binance_pay';
@@ -57,6 +53,11 @@ class WC_Gateway_BinancePay extends WC_Payment_Gateway {
         $this->order_status = $this->get_option( 'order_status', 'completed' );
 
         ini_set( 'error_log', WP_CONTENT_DIR . '/debug-binance-pay.log' );
+
+        /**
+         * Add callback handler for callback-links
+         */
+        add_action( 'woocommerce_api_'. strtolower( get_class($this) ), array( $this, 'callback_handler' ) );
         // Actions
         add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
         // add_action( 'woocommerce_thankyou_' . $this->id, array( $this, 'thankyou_page' ) );
@@ -298,7 +299,8 @@ class WC_Gateway_BinancePay extends WC_Payment_Gateway {
     function receipt_page($order){
         $response = $this->generate_data_for_binance($order);
         if ($response['status'] == "SUCCESS") {
-            $url = $response['universalUrl'];
+            $url = $response['data']['universalUrl'];
+            error_log("Редирект на ссылку: " . $url);
             header("Location: $url ");
         } else {
             echo '<p>'.__('Error! Please, report the error code to support: ', 'woocommerce'). $response['code'] .'</p>';
@@ -310,6 +312,12 @@ class WC_Gateway_BinancePay extends WC_Payment_Gateway {
      * Create callback handler
      */
     public function callback_handler() {
+        $raw_post = file_get_contents( 'php://input' );
+
+        error_log("Ответ на коллбэк : " . $raw_post);
+ 
+		$decoded  = json_decode( $raw_post );
+
 
     }
 
