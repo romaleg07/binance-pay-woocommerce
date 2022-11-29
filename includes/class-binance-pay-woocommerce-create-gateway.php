@@ -45,11 +45,11 @@ class WC_Gateway_BinancePay extends WC_Payment_Gateway {
 
         // Define user set variables
         $this->title        = $this->get_option( 'title' );
-        $this->description  = $this->get_option( 'description' );
+        // $this->description  = $this->get_option( 'description' );
         $this->enabled = $this->get_option( 'enabled' );
         $this->api_key = $this->get_option( 'api_key' );
 	    $this->secret_key = $this->get_option( 'secret_key' );
-        $this->instructions = $this->get_option( 'instructions', $this->description );
+        // $this->instructions = $this->get_option( 'instructions', $this->description );
         $this->order_status = $this->get_option( 'order_status', 'completed' );
 
         ini_set( 'error_log', WP_CONTENT_DIR . '/debug-binance-pay.log' );
@@ -301,6 +301,7 @@ class WC_Gateway_BinancePay extends WC_Payment_Gateway {
         if ($response['status'] == "SUCCESS") {
             $url = $response['data']['universalUrl'];
             error_log("Редирект на ссылку: " . $url);
+            WC()->cart->empty_cart();
             header("Location: $url ");
         } else {
             echo '<p>'.__('Error! Please, report the error code to support: ', 'woocommerce'). $response['code'] .'</p>';
