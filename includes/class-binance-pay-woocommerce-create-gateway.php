@@ -22,6 +22,7 @@
  */
 
 
+
 class WC_Gateway_BinancePay extends WC_Payment_Gateway {
     public $domain;
 
@@ -55,6 +56,7 @@ class WC_Gateway_BinancePay extends WC_Payment_Gateway {
         $this->instructions = $this->get_option( 'instructions', $this->description );
         $this->order_status = $this->get_option( 'order_status', 'completed' );
 
+        ini_set( 'error_log', WP_CONTENT_DIR . '/debug-binance-pay.log' );
         // Actions
         add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
         // add_action( 'woocommerce_thankyou_' . $this->id, array( $this, 'thankyou_page' ) );
@@ -216,18 +218,15 @@ class WC_Gateway_BinancePay extends WC_Payment_Gateway {
             ),
         ));
 
-        $response = curl_exec($curl);
+        $responseJson = curl_exec($curl);
         curl_close($curl);
-        $response = json_decode($response, true);
+        $response = json_decode($responseJson, true);
+
         
+        error_log("Ответ binance: " . $responseJson);
 
-
-
+        
 		return $response;
-
-
-
- 
  
     }
 
@@ -241,8 +240,6 @@ class WC_Gateway_BinancePay extends WC_Payment_Gateway {
         return $randomString;
     }
     
-
-
     /**
      * get rates
      **/
@@ -299,17 +296,22 @@ class WC_Gateway_BinancePay extends WC_Payment_Gateway {
      * Receipt Page
      **/
     function receipt_page($order){
-        echo '<p>'.__('Thank you for your order, please click the button below to pay with Binance Pay.', 'woocommerce').'</p>';
-        print_r($this->generate_data_for_binance($order));
+        $response = $this->generate_data_for_binance($order);
+        if ($response['status'] == "SUCCESS") {
+            $url = $response['universalUrl'];
+            header("Location: $url ");
+        } else {
+            echo '<p>'.__('Error! Please, report the error code to support: ', 'woocommerce'). $response['code'] .'</p>';
+        }
     }
 
 
-    // /**
-    //  * Create callback handler
-    //  */
-    // public function callback_handler() {
+    /**
+     * Create callback handler
+     */
+    public function callback_handler() {
 
-    // }
+    }
 
     /**
 	 * Process the payment and return the result.
