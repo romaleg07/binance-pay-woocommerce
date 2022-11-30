@@ -226,6 +226,8 @@ class WC_Gateway_BinancePay extends WC_Payment_Gateway {
         
         error_log("Ответ binance: " . $responseJson);
 
+        update_post_meta($order_id, '_binance_transaction_id', $response['data']['prepayId']);
+
         
 		return $response;
  
@@ -299,7 +301,7 @@ class WC_Gateway_BinancePay extends WC_Payment_Gateway {
     function receipt_page($order){
         $response = $this->generate_data_for_binance($order);
         if ($response['status'] == "SUCCESS") {
-            $url = $response['data']['universalUrl'];
+            $url = $response['data']['checkoutUrl'];
             error_log("Редирект на ссылку: " . $url);
             WC()->cart->empty_cart();
             header("Location: $url ");
@@ -318,7 +320,41 @@ class WC_Gateway_BinancePay extends WC_Payment_Gateway {
         error_log("Ответ на коллбэк : " . $raw_post);
  
 		$decoded  = json_decode( $raw_post );
+        $data = json_decode( $decoded->data);
 
+        $order_id = $data->merchantTradeNo;
+
+        $order = wc_get_order( $order_id );
+
+        $pay_sum = $data->totalFee . ' ' . $data->currency;
+
+        $trans_id_from_binance = $decoded->bizIdStr;
+
+        $type_request = $decoded->bizType;
+        $status_request = $decoded->bizStatus;
+        
+        $trans_id_from_site = get_post_meta($order_id, '_binance_transaction_id', true);
+
+        if($type_request == 'PAY' and $trans_id_from_binance == (string)$trans_id_from_site) {
+            if($status_request == 'PAY_SUCCESS') {
+                $order->update_status( 'completed', "Успешная оплата Binance, сумма: " . $pay_sum );
+            } elseif ($status_request == 'PAY_CLOSED') {
+                $order->update_status( 'canceled', 'Заказ закрыт системой Binance' );
+            }
+        } elseif($trans_id_from_binance != (string)$trans_id_from_site) {
+            $order->update_status( 'on-hold', 'Не сходятся id в системе Binance: ' . $trans_id_from_binance . ' в нашей: ' .  (string)$trans_id_from_site);
+        } elseif($type_request == 'PAY_REFUND') {
+            if($status_request == 'REFUND_SUCCESS') {
+                $order->update_status( 'refund', "Успешный возврат заказа с binance");
+            } else {
+                $order->update_status( 'on-hold', 'Ошибка возвращения заказа' . $raw_post );
+            }
+        } else {
+            $note = __("Callback binance :" . $raw_post);
+            $order->add_order_note( $note );
+        }
+
+        die();
 
     }
 
