@@ -336,8 +336,10 @@ class WC_Gateway_BinancePay extends WC_Payment_Gateway {
         $trans_id_from_site = get_post_meta($order_id, '_binance_transaction_id', true);
 
         if($type_request == 'PAY' and $trans_id_from_binance == (string)$trans_id_from_site) {
-            if($status_request == 'PAY_SUCCESS') {
+            $completed = get_post_meta($order_id, '_completed_with_binacne', true);
+            if($status_request == 'PAY_SUCCESS' and $completed != 'yes') {
                 $order->update_status( 'completed', "Успешная оплата Binance, сумма: " . $pay_sum );
+                update_post_meta($order_id, '_completed_with_binacne', 'yes');
             } elseif ($status_request == 'PAY_CLOSED') {
                 $order->update_status( 'canceled', 'Заказ закрыт системой Binance' );
             }
